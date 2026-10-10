@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+        <Optimize>true</Optimize>
+        <DebugType>pdbonly</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="BenchmarkDotNet.Attributes" />
+        <Using Include="Union.Errors" />
+        <Using Include="Union.Results" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Union.Results\Union.Results.csproj" />
+    </ItemGroup>
+
+</Project>
