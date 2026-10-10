@@ -1,7 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <VersionPrefix>0.1.0</VersionPrefix>
+        <VersionSuffix>preview.1</VersionSuffix>
         <Description>Allocation-free Result&lt;T&gt; and Result&lt;T, TError&gt; types built on C# unions, with exhaustive pattern matching, a fluent async-friendly API, and building blocks for defining your own errors.</Description>
+        <Authors>R3D</Authors>
+        <Copyright>Copyright (c) 2026 R3D</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/R3DsKZuLlZx/Union.Results</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/R3DsKZuLlZx/Union.Results</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>result;error;union;discriminated-union;functional;railway</PackageTags>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Deterministic>true</Deterministic>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
+
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="/" Visible="false" />
+        <InternalsVisibleTo Include="Union.Results.Tests" />
+    </ItemGroup>
 
 </Project>

@@ -101,7 +101,7 @@ C# applies only one implicit conversion here, so `OutOfStock` does not convert s
 ### Benchmarks
 
 ```
-dotnet run -c Release --project benchmarks/Union.Results.Benchmarks -- --filter '*'
+dotnet run -c Release --project tools/Union.Results.Benchmarks -- --filter '*'
 ```
 
 Use `--filter '*Pipeline*'` to run one group, or `--job short` for a quick, less precise run.
@@ -109,6 +109,7 @@ Use `--filter '*Pipeline*'` to run one group, or `--job short` for a quick, less
 ## Things to know
 
 - **`default(Result<…>)` is neither case.** Most members throw `InvalidOperationException` on it, and a `switch` over it throws `SwitchExpressionException`.
+- **Your own `union` error types can be null.** The compiler declares a `union`'s `Value` as nullable, because its `default` holds no case. A switch that matches inside one, like `Err<OrderError>(OutOfStock …)`, therefore needs an `Err<OrderError>(null)` arm to count as exhaustive. `Result` itself is declared non-nullable, so switching on a result needs only `Ok` and `Err` arms.
 - **Pattern matching inside generic code** (`Result<T, TError>` with open `T`) cannot declare variables (C# error CS8780). This is a current C# limitation. Use `Match`, `Switch` or `TryGetOk`/`TryGetErr` there.
 - **When `T` and `TError` are the same type** (e.g. `Result<string, string>`), the implicit conversions are ambiguous. Use `Result.Ok(…)` / `Result.Err(…)`.
 

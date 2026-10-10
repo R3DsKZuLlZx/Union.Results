@@ -63,6 +63,7 @@ public class ErrorTests
             Ok<int> ok => $"reserved {ok.Value}",
             Err<OrderError>(OutOfStock { Sku: var sku }) => $"no {sku}",
             Err<OrderError>(PaymentDeclined) => "declined",
+            Err<OrderError>(null) => throw new InvalidOperationException("Uninitialized OrderError."),
         };
 
         Assert.Equal("no apple", message);

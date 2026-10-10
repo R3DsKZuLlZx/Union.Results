@@ -53,12 +53,17 @@ public readonly struct Result<T, TError> : IUnion, IEquatable<Result<T, TError>>
     /// The current case boxed as an <see cref="object"/>. This exists for the C# union pattern and
     /// <b>allocates</b>; prefer <see cref="Match{TOut}"/>, <see cref="TryGetOk"/> or pattern matching.
     /// </summary>
+    /// <remarks>
+    /// Declared non-nullable so the compiler treats results as never null, and switches only need
+    /// <see cref="Ok{T}"/> and <see cref="Err{TError}"/> arms. An uninitialized (default) result is a
+    /// misuse that returns <see langword="null"/> here, so a switch over it throws.
+    /// </remarks>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public object? Value => _state switch
+    public object Value => _state switch
     {
         ResultState.Ok => new Ok<T>(_value),
         ResultState.Err => new Err<TError>(_error),
-        _ => null,
+        _ => null!,
     };
 
     /// <summary>

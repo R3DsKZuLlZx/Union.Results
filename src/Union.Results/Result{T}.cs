@@ -43,8 +43,9 @@ public readonly struct Result<T> : IUnion, IEquatable<Result<T>>
     /// The current case boxed as an <see cref="object"/>. This exists for the C# union pattern and
     /// <b>allocates</b>; prefer <see cref="Match{TOut}"/>, <see cref="TryGetOk"/> or pattern matching.
     /// </summary>
+    /// <remarks><inheritdoc cref="Result{T, TError}.Value" path="/remarks"/></remarks>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public object? Value => _inner.Value;
+    public object Value => _inner.Value;
 
     /// <summary>
     /// Whether the result was initialized with a case. This exists for the C# union pattern; use
