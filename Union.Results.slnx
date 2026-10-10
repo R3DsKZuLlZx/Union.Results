@@ -7,7 +7,6 @@
   </Folder>
   <Folder Name="/src/">
     <File Path="src/Directory.Build.props" />
-    <Project Path="src/Union.Errors/Union.Errors.csproj" />
     <Project Path="src/Union.Results/Union.Results.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">

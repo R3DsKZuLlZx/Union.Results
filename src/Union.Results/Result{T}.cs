@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Union.Errors;
 
 namespace Union.Results;
 
@@ -131,8 +130,14 @@ public readonly struct Result<T> : IUnion, IEquatable<Result<T>>
     public Result<T> Ensure(Func<T, bool> predicate, Func<T, Error> error) => new(_inner.Ensure(predicate, error), true);
 
     /// <inheritdoc cref="Result{T, TError}.MapAsync{TOut}"/>
-    public async Task<Result<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> map) =>
-        new(await _inner.MapAsync(map).ConfigureAwait(false), true);
+    public async Task<Result<TOut>> MapAsync<TOut>(Func<T, Task<TOut>> map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        EnsureInitialized();
+        return _inner.TryGetErr(out var error)
+            ? new Result<TOut>(new Err<Error>(error))
+            : new Result<TOut>(new Ok<TOut>(await map(GetValueOrThrow()).ConfigureAwait(false)));
+    }
 
     /// <inheritdoc cref="Result{T, TError}.BindAsync{TOut}"/>
     public Task<Result<TOut>> BindAsync<TOut>(Func<T, Task<Result<TOut>>> bind)
@@ -144,8 +149,17 @@ public readonly struct Result<T> : IUnion, IEquatable<Result<T>>
     }
 
     /// <inheritdoc cref="Result{T, TError}.TapAsync"/>
-    public async Task<Result<T>> TapAsync(Func<T, Task> action) =>
-        new(await _inner.TapAsync(action).ConfigureAwait(false), true);
+    public async Task<Result<T>> TapAsync(Func<T, Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        EnsureInitialized();
+        if (_inner.TryGetOk(out var value))
+        {
+            await action(value).ConfigureAwait(false);
+        }
+
+        return this;
+    }
 
     /// <inheritdoc cref="Result{T, TError}.MatchAsync{TOut}"/>
     public Task<TOut> MatchAsync<TOut>(Func<T, Task<TOut>> ok, Func<Error, Task<TOut>> err) => _inner.MatchAsync(ok, err);

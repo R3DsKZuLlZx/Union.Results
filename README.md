@@ -2,10 +2,10 @@
 
 An opinionated result type built on C# 15 unions, so the compiler checks that your pattern matches are exhaustive. Common use does not allocate.
 
-| Package | What it gives you |
-| --- | --- |
-| `Union.Results` | `Result<T>`, `Result<T, TError>`, `Ok<T>`, `Err<TError>`, `Unit`, and a fluent, async-friendly API |
-| `Union.Errors` | Building blocks for defining your own errors: `IError`, the `Error` base record, `ExceptionError`, `AggregateError` |
+One package, one namespace (`Union.Results`):
+
+- **Results**: `Result<T>`, `Result<T, TError>`, `Ok<T>`, `Err<TError>`, `Unit`, and a fluent, async-friendly API.
+- **Errors**: building blocks for defining your own errors: `IError`, the `Error` base record, `ExceptionError`, `AggregateError`.
 
 Requires .NET 11 / C# 15.
 
@@ -95,7 +95,7 @@ C# applies only one implicit conversion here, so `OutOfStock` does not convert s
 
 - **Lambdas that capture variables** allocate a closure, as anywhere in .NET. Use `static` lambdas or method groups on hot paths.
 - **`Error` records are classes**, so creating one allocates on the failure path. Cache errors you reuse, or use a struct error with `Result<T, TError>` if failures are frequent.
-- **Async APIs** return `Task<…>`, which allocates when it completes asynchronously.
+- **Each async step allocates.** Every step in an async pipeline returns a `Task<Result<…>>`, which allocates about 80 B even when it finishes synchronously. When it really waits, it also allocates its async state, just as a hand-written `await` does.
 - **The `Value` property** exists only because the C# union pattern requires it, and it boxes. It is hidden from IntelliSense. Use pattern matching, `Match` or `TryGetOk` instead.
 
 ### Benchmarks

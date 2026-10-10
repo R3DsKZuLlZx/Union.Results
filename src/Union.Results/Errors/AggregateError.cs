@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Union.Errors;
+namespace Union.Results;
 
 /// <summary>An error made up of several errors, e.g. the failures from validating many fields.</summary>
 public sealed record AggregateError : Error

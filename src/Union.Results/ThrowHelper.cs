@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Union.Errors;
 
 namespace Union.Results;
 

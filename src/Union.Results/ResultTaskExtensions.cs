@@ -1,5 +1,3 @@
-using Union.Errors;
-
 namespace Union.Results;
 
 /// <summary>
@@ -20,8 +18,14 @@ public static class ResultTaskExtensions
         (await result.ConfigureAwait(false)).Map(map);
 
     /// <inheritdoc cref="Result{T, TError}.MapAsync{TOut}"/>
-    public static async Task<Result<TOut, TError>> MapAsync<T, TError, TOut>(this Task<Result<T, TError>> result, Func<T, Task<TOut>> map) =>
-        await (await result.ConfigureAwait(false)).MapAsync(map).ConfigureAwait(false);
+    public static async Task<Result<TOut, TError>> MapAsync<T, TError, TOut>(this Task<Result<T, TError>> result, Func<T, Task<TOut>> map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        var awaited = await result.ConfigureAwait(false);
+        return awaited.TryGetErr(out var error)
+            ? new Result<TOut, TError>(new Err<TError>(error))
+            : new Result<TOut, TError>(new Ok<TOut>(await map(awaited.GetValueOrThrow()).ConfigureAwait(false)));
+    }
 
     /// <inheritdoc cref="Result{T, TError}.MapError{TOut}"/>
     public static async Task<Result<T, TOut>> MapError<T, TError, TOut>(this Task<Result<T, TError>> result, Func<TError, TOut> map) =>
@@ -32,16 +36,36 @@ public static class ResultTaskExtensions
         (await result.ConfigureAwait(false)).Bind(bind);
 
     /// <inheritdoc cref="Result{T, TError}.BindAsync{TOut}"/>
-    public static async Task<Result<TOut, TError>> BindAsync<T, TError, TOut>(this Task<Result<T, TError>> result, Func<T, Task<Result<TOut, TError>>> bind) =>
-        await (await result.ConfigureAwait(false)).BindAsync(bind).ConfigureAwait(false);
+    public static async Task<Result<TOut, TError>> BindAsync<T, TError, TOut>(this Task<Result<T, TError>> result, Func<T, Task<Result<TOut, TError>>> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        var awaited = await result.ConfigureAwait(false);
+        return awaited.TryGetErr(out var error)
+            ? new Result<TOut, TError>(new Err<TError>(error))
+            : await bind(awaited.GetValueOrThrow()).ConfigureAwait(false);
+    }
 
     /// <inheritdoc cref="Result{T, TError}.Tap"/>
     public static async Task<Result<T, TError>> Tap<T, TError>(this Task<Result<T, TError>> result, Action<T> action) =>
         (await result.ConfigureAwait(false)).Tap(action);
 
     /// <inheritdoc cref="Result{T, TError}.TapAsync"/>
-    public static async Task<Result<T, TError>> TapAsync<T, TError>(this Task<Result<T, TError>> result, Func<T, Task> action) =>
-        await (await result.ConfigureAwait(false)).TapAsync(action).ConfigureAwait(false);
+    public static async Task<Result<T, TError>> TapAsync<T, TError>(this Task<Result<T, TError>> result, Func<T, Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        var awaited = await result.ConfigureAwait(false);
+        if (!awaited.HasValue)
+        {
+            ThrowHelper.ThrowDefault();
+        }
+
+        if (awaited.TryGetOk(out var value))
+        {
+            await action(value).ConfigureAwait(false);
+        }
+
+        return awaited;
+    }
 
     /// <inheritdoc cref="Result{T, TError}.TapError"/>
     public static async Task<Result<T, TError>> TapError<T, TError>(this Task<Result<T, TError>> result, Action<TError> action) =>
@@ -66,8 +90,14 @@ public static class ResultTaskExtensions
         (await result.ConfigureAwait(false)).Map(map);
 
     /// <inheritdoc cref="Result{T}.MapAsync{TOut}"/>
-    public static async Task<Result<TOut>> MapAsync<T, TOut>(this Task<Result<T>> result, Func<T, Task<TOut>> map) =>
-        await (await result.ConfigureAwait(false)).MapAsync(map).ConfigureAwait(false);
+    public static async Task<Result<TOut>> MapAsync<T, TOut>(this Task<Result<T>> result, Func<T, Task<TOut>> map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        var awaited = await result.ConfigureAwait(false);
+        return awaited.TryGetErr(out var error)
+            ? new Result<TOut>(new Err<Error>(error))
+            : new Result<TOut>(new Ok<TOut>(await map(awaited.GetValueOrThrow()).ConfigureAwait(false)));
+    }
 
     /// <inheritdoc cref="Result{T}.MapError"/>
     public static async Task<Result<T>> MapError<T>(this Task<Result<T>> result, Func<Error, Error> map) =>
@@ -78,16 +108,36 @@ public static class ResultTaskExtensions
         (await result.ConfigureAwait(false)).Bind(bind);
 
     /// <inheritdoc cref="Result{T}.BindAsync{TOut}"/>
-    public static async Task<Result<TOut>> BindAsync<T, TOut>(this Task<Result<T>> result, Func<T, Task<Result<TOut>>> bind) =>
-        await (await result.ConfigureAwait(false)).BindAsync(bind).ConfigureAwait(false);
+    public static async Task<Result<TOut>> BindAsync<T, TOut>(this Task<Result<T>> result, Func<T, Task<Result<TOut>>> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        var awaited = await result.ConfigureAwait(false);
+        return awaited.TryGetErr(out var error)
+            ? new Result<TOut>(new Err<Error>(error))
+            : await bind(awaited.GetValueOrThrow()).ConfigureAwait(false);
+    }
 
     /// <inheritdoc cref="Result{T}.Tap"/>
     public static async Task<Result<T>> Tap<T>(this Task<Result<T>> result, Action<T> action) =>
         (await result.ConfigureAwait(false)).Tap(action);
 
     /// <inheritdoc cref="Result{T}.TapAsync"/>
-    public static async Task<Result<T>> TapAsync<T>(this Task<Result<T>> result, Func<T, Task> action) =>
-        await (await result.ConfigureAwait(false)).TapAsync(action).ConfigureAwait(false);
+    public static async Task<Result<T>> TapAsync<T>(this Task<Result<T>> result, Func<T, Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        var awaited = await result.ConfigureAwait(false);
+        if (!awaited.HasValue)
+        {
+            ThrowHelper.ThrowDefault();
+        }
+
+        if (awaited.TryGetOk(out var value))
+        {
+            await action(value).ConfigureAwait(false);
+        }
+
+        return awaited;
+    }
 
     /// <inheritdoc cref="Result{T}.TapError"/>
     public static async Task<Result<T>> TapError<T>(this Task<Result<T>> result, Action<Error> action) =>

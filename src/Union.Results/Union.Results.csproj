@@ -1,11 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>Allocation-free Result&lt;T&gt; and Result&lt;T, TError&gt; types built on C# unions, with exhaustive pattern matching and a fluent, async-friendly API.</Description>
+        <Description>Allocation-free Result&lt;T&gt; and Result&lt;T, TError&gt; types built on C# unions, with exhaustive pattern matching, a fluent async-friendly API, and building blocks for defining your own errors.</Description>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Union.Errors\Union.Errors.csproj" />
-    </ItemGroup>
 
 </Project>

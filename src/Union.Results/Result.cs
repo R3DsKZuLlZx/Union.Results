@@ -1,5 +1,3 @@
-using Union.Errors;
-
 namespace Union.Results;
 
 /// <summary>Factory and helper methods for <see cref="Result{T}"/> and <see cref="Result{T, TError}"/>.</summary>

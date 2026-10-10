@@ -20,6 +20,9 @@ public class AsyncPipelineBenchmarks
     private Task<Result<int>> _cachedFind = null!;
     private Task<Result<int>> _cachedLoad = null!;
     private Func<int, Task<Result<int>>> _load = null!;
+    private Task<int> _cachedTwo = null!;
+    private Func<int, Task<int>> _addOne = null!;
+    private Func<int, Task> _audit = null!;
     private int _id;
 
     [Params(Completion.Sync, Completion.Async)]
@@ -35,6 +38,9 @@ public class AsyncPipelineBenchmarks
         _cachedFind = Task.FromResult(Lookup(_id));
         _cachedLoad = Task.FromResult<Result<int>>(10);
         _load = LoadAsync;
+        _cachedTwo = Task.FromResult(2);
+        _addOne = AddOneAsync;
+        _audit = AuditAsync;
     }
 
     [Benchmark(Baseline = true)]
@@ -70,7 +76,29 @@ public class AsyncPipelineBenchmarks
             .BindAsync(_load)
             .Match(static x => x, static _ => -1);
 
+    [Benchmark]
+    public Task<int> Fluent_Task_AsyncSteps() =>
+        FindAsync(_id)
+            .MapAsync(_addOne)
+            .TapAsync(_audit)
+            .BindAsync(_load)
+            .Match(static x => x, static _ => -1);
+
     private static Result<int> Lookup(int id) => id > 0 ? id : Missing;
+
+    private Task<int> AddOneAsync(int value) =>
+        Completion == Completion.Sync ? _cachedTwo : AddOneSlowAsync(value);
+
+    private Task AuditAsync(int value) =>
+        Completion == Completion.Sync ? Task.CompletedTask : AuditSlowAsync();
+
+    private static async Task AuditSlowAsync() => await Task.Yield();
+
+    private static async Task<int> AddOneSlowAsync(int value)
+    {
+        await Task.Yield();
+        return value + 1;
+    }
 
     private Task<Result<int>> FindAsync(int id) =>
         Completion == Completion.Sync ? _cachedFind : FindSlowAsync(id);

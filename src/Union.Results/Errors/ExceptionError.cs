@@ -1,4 +1,4 @@
-namespace Union.Errors;
+namespace Union.Results;
 
 /// <summary>An error that wraps an <see cref="System.Exception"/> caught at a boundary.</summary>
 /// <param name="Exception">The exception that was caught.</param>

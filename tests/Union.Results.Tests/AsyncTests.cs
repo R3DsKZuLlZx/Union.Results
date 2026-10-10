@@ -55,6 +55,57 @@ public class AsyncTests
     }
 
     [Fact]
+    public async Task Async_steps_on_task_pipelines_skip_errors()
+    {
+        var calls = 0;
+
+        var result = await FindAsync("2")
+            .MapAsync(x => { calls++; return Task.FromResult(x); })
+            .TapAsync(_ => { calls++; return Task.CompletedTask; })
+            .BindAsync(x => { calls++; return DescribeAsync(x); });
+
+        Assert.Equal(0, calls);
+        Assert.Equal(new NotFound("2"), result.GetErrorOrThrow());
+    }
+
+    [Fact]
+    public async Task General_form_async_steps_compose_and_skip_errors()
+    {
+        static Task<Result<int, string>> Load(bool ok) =>
+            Task.FromResult<Result<int, string>>(ok ? 2 : "missing");
+
+        var log = new List<int>();
+
+        var ok = await Load(true)
+            .MapAsync(static async x => { await Task.Yield(); return x + 1; })
+            .TapAsync(x => { log.Add(x); return Task.CompletedTask; })
+            .BindAsync(static x => Task.FromResult<Result<int, string>>(x * 10));
+
+        var err = await Load(false)
+            .MapAsync(static x => Task.FromResult(x + 1))
+            .TapAsync(x => { log.Add(x); return Task.CompletedTask; })
+            .BindAsync(static x => Task.FromResult<Result<int, string>>(x * 10));
+
+        Assert.Equal(30, ok.GetValueOrThrow());
+        Assert.Equal("missing", err.GetErrorOrThrow());
+        Assert.Equal([3], log);
+    }
+
+    [Fact]
+    public async Task Async_steps_on_default_results_fault()
+    {
+        var general = Task.FromResult(default(Result<int, string>));
+        var specific = Task.FromResult(default(Result<int>));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => general.MapAsync(static x => Task.FromResult(x)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => general.BindAsync(static x => Task.FromResult<Result<int, string>>(x)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => general.TapAsync(static _ => Task.CompletedTask));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => specific.MapAsync(static x => Task.FromResult(x)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => specific.TapAsync(static _ => Task.CompletedTask));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => default(Result<int>).TapAsync(static _ => Task.CompletedTask));
+    }
+
+    [Fact]
     public async Task MapAsync_and_MatchAsync_work_on_results()
     {
         Result<int> result = 3;

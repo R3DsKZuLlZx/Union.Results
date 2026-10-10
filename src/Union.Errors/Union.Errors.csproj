@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <Description>Building blocks for defining your own strongly-typed errors: IError, an Error base record, and common composable errors.</Description>
-    </PropertyGroup>
-
-</Project>

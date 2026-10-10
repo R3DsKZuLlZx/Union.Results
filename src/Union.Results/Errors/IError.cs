@@ -1,4 +1,4 @@
-namespace Union.Errors;
+namespace Union.Results;
 
 /// <summary>
 /// The minimal contract shared by all errors. Implement this on your own error types

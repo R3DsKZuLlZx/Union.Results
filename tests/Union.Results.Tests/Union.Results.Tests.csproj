@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <Using Include="Xunit" />
-        <Using Include="Union.Errors" />
         <Using Include="Union.Results" />
     </ItemGroup>
 

@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using System.Text;
 
-namespace Union.Errors;
+namespace Union.Results;
 
 /// <summary>
 /// A base record for defining your own errors. Derive from it to get a code, a message,

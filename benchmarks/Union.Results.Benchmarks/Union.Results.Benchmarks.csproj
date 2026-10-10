@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <Using Include="BenchmarkDotNet.Attributes" />
-        <Using Include="Union.Errors" />
         <Using Include="Union.Results" />
     </ItemGroup>
 
