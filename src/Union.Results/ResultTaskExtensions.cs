@@ -154,4 +154,109 @@ public static class ResultTaskExtensions
     /// <inheritdoc cref="Result{T}.MatchAsync{TOut}"/>
     public static async Task<TOut> MatchAsync<T, TOut>(this Task<Result<T>> result, Func<T, Task<TOut>> ok, Func<Error, Task<TOut>> err) =>
         await (await result.ConfigureAwait(false)).MatchAsync(ok, err).ConfigureAwait(false);
+
+    /// <inheritdoc cref="Result{T}.Bind(Func{T, Result})"/>
+    public static async Task<Result> Bind<T>(this Task<Result<T>> result, Func<T, Result> bind) =>
+        (await result.ConfigureAwait(false)).Bind(bind);
+
+    /// <inheritdoc cref="Result{T}.BindAsync(Func{T, Task{Result}})"/>
+    public static async Task<Result> BindAsync<T>(this Task<Result<T>> result, Func<T, Task<Result>> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        var awaited = await result.ConfigureAwait(false);
+        return awaited.TryGetErr(out var error)
+            ? new Result(new Err<Error>(error))
+            : await bind(awaited.GetValueOrThrow()).ConfigureAwait(false);
+    }
+
+    // Result
+
+    /// <inheritdoc cref="Result.Map{TOut}"/>
+    public static async Task<Result<TOut>> Map<TOut>(this Task<Result> result, Func<TOut> map) =>
+        (await result.ConfigureAwait(false)).Map(map);
+
+    /// <inheritdoc cref="Result.MapAsync{TOut}"/>
+    public static async Task<Result<TOut>> MapAsync<TOut>(this Task<Result> result, Func<Task<TOut>> map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        var awaited = await result.ConfigureAwait(false);
+        awaited.ThrowIfDefault();
+        return awaited.TryGetErr(out var error)
+            ? new Result<TOut>(new Err<Error>(error))
+            : new Result<TOut>(new Ok<TOut>(await map().ConfigureAwait(false)));
+    }
+
+    /// <inheritdoc cref="Result.MapError"/>
+    public static async Task<Result> MapError(this Task<Result> result, Func<Error, Error> map) =>
+        (await result.ConfigureAwait(false)).MapError(map);
+
+    /// <inheritdoc cref="Result.Bind(Func{Result})"/>
+    public static async Task<Result> Bind(this Task<Result> result, Func<Result> bind) =>
+        (await result.ConfigureAwait(false)).Bind(bind);
+
+    /// <inheritdoc cref="Result.Bind{TOut}(Func{Result{TOut}})"/>
+    public static async Task<Result<TOut>> Bind<TOut>(this Task<Result> result, Func<Result<TOut>> bind) =>
+        (await result.ConfigureAwait(false)).Bind(bind);
+
+    /// <inheritdoc cref="Result.BindAsync(Func{Task{Result}})"/>
+    public static async Task<Result> BindAsync(this Task<Result> result, Func<Task<Result>> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        var awaited = await result.ConfigureAwait(false);
+        awaited.ThrowIfDefault();
+        return awaited.IsErr ? awaited : await bind().ConfigureAwait(false);
+    }
+
+    /// <inheritdoc cref="Result.BindAsync{TOut}(Func{Task{Result{TOut}}})"/>
+    public static async Task<Result<TOut>> BindAsync<TOut>(this Task<Result> result, Func<Task<Result<TOut>>> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        var awaited = await result.ConfigureAwait(false);
+        awaited.ThrowIfDefault();
+        return awaited.TryGetErr(out var error)
+            ? new Result<TOut>(new Err<Error>(error))
+            : await bind().ConfigureAwait(false);
+    }
+
+    /// <inheritdoc cref="Result.Tap"/>
+    public static async Task<Result> Tap(this Task<Result> result, Action action) =>
+        (await result.ConfigureAwait(false)).Tap(action);
+
+    /// <inheritdoc cref="Result.TapAsync"/>
+    public static async Task<Result> TapAsync(this Task<Result> result, Func<Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        var awaited = await result.ConfigureAwait(false);
+        awaited.ThrowIfDefault();
+        if (awaited.IsOk)
+        {
+            await action().ConfigureAwait(false);
+        }
+
+        return awaited;
+    }
+
+    /// <inheritdoc cref="Result.TapError"/>
+    public static async Task<Result> TapError(this Task<Result> result, Action<Error> action) =>
+        (await result.ConfigureAwait(false)).TapError(action);
+
+    /// <inheritdoc cref="Result.Ensure(Func{bool}, Error)"/>
+    public static async Task<Result> Ensure(this Task<Result> result, Func<bool> predicate, Error error) =>
+        (await result.ConfigureAwait(false)).Ensure(predicate, error);
+
+    /// <inheritdoc cref="Result.Match{TOut}"/>
+    public static async Task<TOut> Match<TOut>(this Task<Result> result, Func<TOut> ok, Func<Error, TOut> err) =>
+        (await result.ConfigureAwait(false)).Match(ok, err);
+
+    /// <inheritdoc cref="Result.MatchAsync{TOut}"/>
+    public static async Task<TOut> MatchAsync<TOut>(this Task<Result> result, Func<Task<TOut>> ok, Func<Error, Task<TOut>> err) =>
+        await (await result.ConfigureAwait(false)).MatchAsync(ok, err).ConfigureAwait(false);
+
+    private static void ThrowIfDefault(this Result result)
+    {
+        if (!result.HasValue)
+        {
+            ThrowHelper.ThrowDefault();
+        }
+    }
 }

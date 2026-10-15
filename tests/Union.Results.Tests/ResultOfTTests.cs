@@ -90,13 +90,23 @@ public class ResultOfTTests
     }
 
     [Fact]
-    public void Unit_results_represent_operations_without_values()
+    public void Bind_can_chain_into_operations_without_values()
     {
-        static Result<Unit> Save(bool succeed) => succeed ? Result.Ok() : new Invalid("entity");
+        var saved = new List<int>();
+        Result Save(int count)
+        {
+            if (count > 5)
+            {
+                return new Invalid("count");
+            }
 
-        Assert.True(Save(true).IsOk);
-        Assert.Equal(Unit.Value, Save(true).GetValueOrThrow());
-        Assert.True(Save(false).IsErr);
+            saved.Add(count);
+            return Result.Ok();
+        }
+
+        Assert.True(FindStock("apple").Bind(Save).IsOk);
+        Assert.IsType<NotFound>(FindStock("pear").Bind(Save).GetErrorOrThrow());
+        Assert.Equal([3], saved);
     }
 
     [Fact]

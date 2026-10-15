@@ -106,6 +106,13 @@ public readonly struct Result<T> : IUnion, IEquatable<Result<T>>
         return _inner.TryGetErr(out var error) ? new Result<TOut>(new Err<Error>(error)) : bind(GetValueOrThrow());
     }
 
+    /// <summary>Chains an operation that may fail and returns nothing onto a successful result; errors short-circuit.</summary>
+    public Result Bind(Func<T, Result> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        return _inner.TryGetErr(out var error) ? new Result(new Err<Error>(error)) : bind(GetValueOrThrow());
+    }
+
     /// <inheritdoc cref="Result{T, TError}.OrElse"/>
     public Result<T> OrElse(Func<Error, Result<T>> recover)
     {
@@ -146,6 +153,15 @@ public readonly struct Result<T> : IUnion, IEquatable<Result<T>>
         ArgumentNullException.ThrowIfNull(bind);
         return _inner.TryGetErr(out var error)
             ? Task.FromResult(new Result<TOut>(new Err<Error>(error)))
+            : bind(GetValueOrThrow());
+    }
+
+    /// <summary>Chains an asynchronous operation that may fail and returns nothing; errors short-circuit.</summary>
+    public Task<Result> BindAsync(Func<T, Task<Result>> bind)
+    {
+        ArgumentNullException.ThrowIfNull(bind);
+        return _inner.TryGetErr(out var error)
+            ? Task.FromResult(new Result(new Err<Error>(error)))
             : bind(GetValueOrThrow());
     }
 

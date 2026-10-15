@@ -4,7 +4,7 @@ An opinionated result type built on C# 15 unions, so the compiler checks that yo
 
 One package, one namespace (`Union.Results`):
 
-- **Results**: `Result<T>`, `Result<T, TError>`, `Ok<T>`, `Err<TError>`, `Unit`, and a fluent, async-friendly API.
+- **Results**: `Result`, `Result<T>`, `Result<T, TError>`, `Ok`, `Ok<T>`, `Err<TError>`, and a fluent, async-friendly API.
 - **Errors**: building blocks for defining your own errors: `IError`, the `Error` base record, `ExceptionError`, `AggregateError`.
 
 Requires .NET 11 / C# 15.
@@ -31,6 +31,24 @@ var message = Find(id) switch
 
 `Result<T>` is the everyday type, with failures described by `Error` records. `Result<T, TError>` takes any error type: a string, an enum, a struct, or a union of your own errors. The two convert implicitly to each other when `TError` is `Error`.
 
+### Operations that return nothing
+
+Use `Result`, whose cases are `Ok` and `Err<Error>`:
+
+```csharp
+Result Save(Order order) => order.IsValid ? Result.Ok() : new InvalidOrder(order.Id);
+
+var message = Save(order) switch
+{
+    Ok                    => "Saved",
+    Err<Error>(var error) => error.Message,
+};
+
+Result placed = FindCart(id).Bind(cart => Save(cart.ToOrder()));   // Result<T> → Result
+```
+
+With your own error type, use `Ok` as the value type: `Result<Ok, OrderError> Cancel(…) => Result.Ok();`.
+
 ### Pipelines
 
 ```csharp
@@ -56,7 +74,7 @@ var dto = await FindAsync(id)
 | `Result.Try` / `Result.TryAsync` | Turn exceptions into errors at a boundary |
 | `Sequence` / `Combine` | Many results → one (fail fast / collect every error) |
 
-Operations that return nothing use `Result<Unit>` and `Result.Ok()`.
+`Result` has the same members, minus the value accessors and LINQ. Its delegates take no value (`Map(() => …)`, `Tap(() => …)`), and `ThrowIfErr()` replaces `GetValueOrThrow()`.
 
 ## Defining errors
 

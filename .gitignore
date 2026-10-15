@@ -64,3 +64,4 @@ artifacts/
 
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
+*.DotSettings.user

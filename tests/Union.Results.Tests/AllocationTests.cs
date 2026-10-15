@@ -24,6 +24,23 @@ public class AllocationTests
     }
 
     [Fact]
+    public void Results_without_values_do_not_allocate()
+    {
+        AssertNoAllocations(static () =>
+        {
+            Result ok = Result.Ok();
+            Result err = CachedError;
+            var total = ok switch { Ok => 1, Err<Error> => 0 };
+            total += err switch { Ok => 0, Err<Error> => 1 };
+            return total + ok
+                .Ensure(static () => true, CachedError)
+                .Bind(static () => (Result)Result.Ok())
+                .Map(static () => 1)
+                .Match(static x => x, static _ => -1);
+        });
+    }
+
+    [Fact]
     public void Static_lambda_pipelines_do_not_allocate()
     {
         AssertNoAllocations(static () =>
