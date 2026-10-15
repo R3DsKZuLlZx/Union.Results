@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <IsPackable>true</IsPackable>
-        <Version>0.1.0-preview.1</Version>
+        <Version>0.1.0-preview.2</Version>
         <Description>Allocation-free Result&lt;T&gt; and Result&lt;T, TError&gt; types built on C# unions, with exhaustive pattern matching, a fluent async-friendly API, and building blocks for defining your own errors.</Description>
         <Authors>Chris Johns</Authors>
         <Copyright>Copyright (c) 2026 Chris Johns</Copyright>
