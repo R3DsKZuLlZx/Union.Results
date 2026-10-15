@@ -1,0 +1,140 @@
+name: Release
+
+# Releases the <Version> in Union.Results.csproj. Change the version and merge to main to
+# release it; pushes that leave the version unchanged (its tag already exists) are skipped.
+on:
+  push:
+    branches: [main]
+    paths: ['src/Union.Results/Union.Results.csproj']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      exists: ${{ steps.version.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Read version from csproj
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases are only made from main."
+            exit 1
+          fi
+          version=$(dotnet msbuild src/Union.Results/Union.Results.csproj -getProperty:Version)
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Version '$version' is not <major>.<minor>.<patch>[-<prerelease>]."
+            exit 1
+          fi
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "::notice::$tag already exists; nothing to release."
+            exists=true
+          else
+            exists=false
+          fi
+          [[ "$version" == *-* ]] && prerelease=true || prerelease=false
+          {
+            echo "version=$version"
+            echo "tag=$tag"
+            echo "prerelease=$prerelease"
+            echo "exists=$exists"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        if: steps.version.outputs.exists == 'false'
+        run: dotnet test -c Release
+
+      - name: Pack
+        if: steps.version.outputs.exists == 'false'
+        run: dotnet pack src/Union.Results/Union.Results.csproj -c Release -o artifacts
+
+      - name: Attest build provenance
+        if: steps.version.outputs.exists == 'false'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'artifacts/*.nupkg'
+
+      - uses: actions/upload-artifact@v4
+        if: steps.version.outputs.exists == 'false'
+        with:
+          name: packages
+          path: artifacts/
+          if-no-files-found: error
+
+  github-release:
+    needs: build
+    if: needs.build.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: artifacts
+
+      # An immutable release cannot gain assets once published, so create it as a draft,
+      # attach the packages, then publish it. Publishing creates the tag at the built commit.
+      - name: Create draft release
+        run: |
+          prerelease_flag=""
+          if [[ "${{ needs.build.outputs.prerelease }}" == "true" ]]; then
+            prerelease_flag="--prerelease"
+          fi
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --generate-notes --title "$TAG" $prerelease_flag artifacts/*
+
+      - name: Publish release
+        run: gh release edit "$TAG" --draft=false
+
+  nuget:
+    needs: [build, github-release]
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: artifacts
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Trusted publishing: exchanges this workflow's OIDC token for a short-lived API key.
+      - name: Log in to NuGet
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to nuget.org
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -2,11 +2,10 @@
 
     <PropertyGroup>
         <IsPackable>true</IsPackable>
-        <VersionPrefix>0.1.0</VersionPrefix>
-        <VersionSuffix>preview.1</VersionSuffix>
+        <Version>0.1.0-preview.1</Version>
         <Description>Allocation-free Result&lt;T&gt; and Result&lt;T, TError&gt; types built on C# unions, with exhaustive pattern matching, a fluent async-friendly API, and building blocks for defining your own errors.</Description>
-        <Authors>R3D</Authors>
-        <Copyright>Copyright (c) 2026 R3D</Copyright>
+        <Authors>Chris Johns</Authors>
+        <Copyright>Copyright (c) 2026 Chris Johns</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/R3DsKZuLlZx/Union.Results</PackageProjectUrl>
         <RepositoryUrl>https://github.com/R3DsKZuLlZx/Union.Results</RepositoryUrl>

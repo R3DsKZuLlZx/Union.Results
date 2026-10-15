@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
 
 permissions:
@@ -25,18 +24,9 @@ jobs:
         run: dotnet test -c Release
 
       - name: Pack
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            dotnet pack -c Release -o artifacts -p:Version="${GITHUB_REF_NAME#v}"
-          else
-            dotnet pack -c Release -o artifacts
-          fi
+        run: dotnet pack src/Union.Results/Union.Results.csproj -c Release -o artifacts
 
       - uses: actions/upload-artifact@v4
         with:
           name: packages
           path: artifacts/
-
-      - name: Publish to NuGet
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
